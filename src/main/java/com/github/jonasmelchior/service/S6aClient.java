@@ -41,7 +41,8 @@ public class S6aClient implements ClientS6aSessionListener {
 
     @Override
     public void doCancelLocationRequestEvent(ClientS6aSession session, JCancelLocationRequest request) throws InternalException, IllegalDiameterStateException, RouteException, OverloadException {
-
+        Log.info("Received CLR");
+        DiameterUtilities.printMessage(request.getMessage());
     }
 
     @Override
@@ -92,7 +93,7 @@ public class S6aClient implements ClientS6aSessionListener {
                 Message message = messageParser.createEmptyMessage(318, 16777251);
                 message.getApplicationIdAvps().add(ApplicationId.createByAuthAppId(vendorId, 16777251));
                 message.setRequest(true);
-                message.getAvps().addAvp(1, "238025123456789", false);
+                message.getAvps().addAvp(1, "310150123456789", false);
                 message.getAvps().addAvp(1407, "32F810", true);
                 message.getAvps().addAvp(Avp.DESTINATION_REALM, "server.test.com", false);
                 message.getAvps().addAvp(Avp.DESTINATION_HOST, "ocs.demo.org", false);
@@ -129,6 +130,76 @@ public class S6aClient implements ClientS6aSessionListener {
         clientS6aSession.sendAuthenticationInformationRequest(jAuthenticationInformationRequest);
     }
 
+    public void sendTestUpdateLocationRequest(String originHost) throws Exception {
+        long vendorId = stack.getMetaData().getLocalPeer().getVendorId();
+        ApplicationId application = ApplicationId.createByAuthAppId(vendorId, 16777251); // S6a application ID
+
+        ClientS6aSession clientS6aSession = stack.getSessionFactory().getNewAppSession(null, application, ClientS6aSession.class);
+
+        MessageParser messageParser = new MessageParser();
+
+        JUpdateLocationRequest ulr = new JUpdateLocationRequest() {
+            @Override
+            public String getDestinationHost() {
+                return "localhost";
+            }
+
+            @Override
+            public String getDestinationRealm() {
+                return "server.jdiameter.com";
+            }
+
+            @Override
+            public int getCommandCode() {
+                return 316; // ULR command code
+            }
+
+            @Override
+            public Message getMessage() {
+                Message message = messageParser.createEmptyMessage(316, 16777251); // ULR
+                message.getApplicationIdAvps().add(ApplicationId.createByAuthAppId(vendorId, 16777251));
+                message.setRequest(true);
+
+
+                // --- Required AVPs ---
+                message.getAvps().addAvp(Avp.USER_NAME, "310150123456789", false);  // IMSI
+                message.getAvps().addAvp(Avp.DESTINATION_REALM, "server.test.com", false);
+                message.getAvps().addAvp(Avp.DESTINATION_HOST, "ocs.demo.org", false);
+                message.getAvps().addAvp(Avp.ORIGIN_REALM, "client.test.com", false);
+                message.getAvps().addAvp(Avp.ORIGIN_HOST, originHost, false);
+                message.getAvps().addAvp(Avp.VENDOR_ID, vendorId, false);
+
+                Log.info("ULR Message:");
+                DiameterUtilities.printMessage(message);
+
+                return message;
+            }
+
+            @Override
+            public String getOriginHost() {
+                return originHost;
+            }
+
+            @Override
+            public String getOriginRealm() {
+                return "client.jdiameter.com";
+            }
+        };
+
+        // --- Optional: log application IDs ---
+        for (ApplicationId applicationId : ulr.getMessage().getApplicationIdAvps()) {
+            Log.info("Auth App ID: " + applicationId.getAuthAppId());
+            Log.info("Vendor ID: " + applicationId.getVendorId());
+        }
+
+        System.out.println("Destination Realm: " + ulr.getDestinationRealm());
+
+        // --- Send the request ---
+        clientS6aSession.sendUpdateLocationRequest(ulr);
+    }
+
+
+
     @Override
     public void doPurgeUEAnswerEvent(ClientS6aSession session, JPurgeUERequest request, JPurgeUEAnswer answer) throws InternalException, IllegalDiameterStateException, RouteException, OverloadException {
 
@@ -136,7 +207,8 @@ public class S6aClient implements ClientS6aSessionListener {
 
     @Override
     public void doUpdateLocationAnswerEvent(ClientS6aSession session, JUpdateLocationRequest request, JUpdateLocationAnswer answer) throws InternalException, IllegalDiameterStateException, RouteException, OverloadException {
-
+        Log.info("ULA Received");
+        DiameterUtilities.printMessage(answer.getMessage());
     }
 
     @Override

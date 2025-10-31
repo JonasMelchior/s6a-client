@@ -16,9 +16,23 @@ public class S6aClientBootstrap {
     @Inject
     S6aClient client;
 
-    void onStart(@Observes StartupEvent event) throws IllegalDiameterStateException, RouteException, OverloadException, InternalException, AvpDataException {
+    void onStart(@Observes StartupEvent event) throws Exception {
         Log.info("Starting S6a test client");
+
         Log.info("Sending test AIR");
         client.sendTestAuthenticationInformationRequest();
+
+//        Log.info("Sending test ULR");
+//        client.sendTestUpdateLocationRequest("mme1.localhost");
+//
+//        // Delay for 2 seconds (2000 milliseconds)
+//        try {
+//            Thread.sleep(2000);
+//        } catch (InterruptedException e) {
+//            Thread.currentThread().interrupt(); // restore interrupt flag
+//            e.printStackTrace();
+//        }
+//
+//        client.sendTestUpdateLocationRequest("mme2.localhost");
     }
 }
